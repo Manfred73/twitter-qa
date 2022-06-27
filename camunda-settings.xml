@@ -4,7 +4,7 @@
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
   <pluginGroups>
   </pluginGroups>
-
+<!--
   <proxies>
     <proxy>
       <id>optional</id>
@@ -17,12 +17,13 @@
       <nonProxyHosts>local.net|some.host.com</nonProxyHosts>
     </proxy>
   </proxies>
+  -->
 
   <servers>
     <server>
       <id>camunda-bpm-nexus-ee</id>
-      <username>camunda enterprise user</username>
-      <password>camunda enterprise password</password>
+      <username>trial_user_name</username>
+      <password>trial_password</password>
     </server>
   </servers>
 

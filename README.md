@@ -1,13 +1,28 @@
-# twitter-qa
-Template for the Camunda Training for Java Developers
+# twitter-qa fork
+This is a fork of the original Camunda Training twitter-qa, a template for the Camunda Training for Java Developers.
+The original repo can be found here: https://github.com/camunda-consulting/twitter-qa.
 
 ## Maven Setup for Enterprise Version
 
 This template is ready to be used in the Camunda Enterprise version. You need to configure your Maven to access the artefacts from the private repository https://artifacts.camunda.com/artifactory/private/.
 
+If you're running this on a personal laptop, you can sign up for a 30-day trial for Camunda Enterprise: https://camunda.com/download/enterprise/.
+Add the following server details to your maven `settings.xml` (located in your user/.m2 folder) replacing the trial_user_name and trial_password with your credentials.
+You can also overrule your maven `settings.xml` by using the `camunda-settings.xml`; in this case also make sure to replace the credentials in this file. 
+
+```xml
+  <servers>
+    <server>
+        <id>camunda-bpm-nexus-ee</id>
+        <username>trial_user_name</username>
+        <password>trial_password</password>
+    </server>
+</servers>
+```
+
 ### Company wide mirror available
 
-If your company is already a enterprise customer and you have a maven mirror, you can use it. Maybe you already set this up. If your `settings.xml` located in the `.m2` directory in your home folder already contains  something like
+If your company is already a enterprise customer and you have a maven mirror, you can use it. Maybe you already set this up. If your `settings.xml` located in the `.m2` directory in your home folder already contains something like
 
 ```xml
   <mirrors>

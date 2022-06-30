@@ -14,7 +14,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.assertThat;
+import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.complete;
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.execute;
+import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.externalTask;
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.findId;
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.jobQuery;
 import static org.camunda.bpm.engine.test.assertions.bpmn.BpmnAwareTests.runtimeService;
@@ -98,7 +100,7 @@ public class ProcessJUnitTest {
         variables.put("approved", false);
         variables.put("content", "Gompie did it again at " + LocalDateTime.now());
 
-        given(emailService.sendEmail()).willReturn(expectedMailId);
+        //given(emailService.sendEmail()).willReturn(expectedMailId);
 
         // Start process with Java API and variables
         final var processInstance = runtimeService()
@@ -109,9 +111,72 @@ public class ProcessJUnitTest {
 
         // Make assertions on the process instance
         assertThat(processInstance)
-                .isEnded()
-                .hasPassed(findId("Tweet rejected"))
-                .variables()
-                .containsEntry("mailId", expectedMailId);
+                .isWaitingAt(findId("Send email to sender of rejection"))
+                .externalTask()
+                .hasTopicName("notification");
+        complete(externalTask());
+    }
+
+    @Test
+    @Deployment(resources = "TwitterQAProcess.bpmn")
+    public void testTweetSubmittedBySuperuser() {
+        // Register mocks
+        Mocks.register("tweetDelegate", new CreateTweetDelegate(tweetService));
+
+        // Create a HashMap to put in variables for the process instance
+        final var variables = new HashMap<String, Object>();
+        variables.put("content", "Gompie the superuser did it again at " + LocalDateTime.now());
+
+        // Start process with Java API and variables
+        final var processInstance = runtimeService()
+                .createMessageCorrelation("superuserTweet")
+                .setVariables(variables)
+                .correlateWithResult()
+                .getProcessInstance();
+
+        // Make assertions on the process instance
+        assertThat(processInstance).isStarted();
+
+        // Get the job
+        final var jobList = jobQuery()
+                .processInstanceId(processInstance.getId())
+                .list();
+
+        // Execute the job
+        assertThat(jobList).hasSize(1);
+        final var job = jobList.get(0);
+        execute(job);
+
+        // Assert that process has ended
+        assertThat(processInstance).isEnded();
+    }
+
+    @Test
+    @Deployment(resources = "TwitterQAProcess.bpmn")
+    public void testTweetWithdrawnPath() {
+        // Register mocks
+        Mocks.register("tweetDelegate", new CreateTweetDelegate(tweetService));
+
+        // Create a HashMap to put in variables for the process instance
+        final var content = "Gompie did it again at, oops withdrawn " + LocalDateTime.now();
+        final var variables = new HashMap<String, Object>();
+        variables.put("content", content);
+
+        // Start process with Java API and variables
+        final var processInstance = runtimeService()
+                .startProcessInstanceByKey("TwitterQAProcess", variables);
+
+        // Make assertions on the process instance
+        assertThat(processInstance).isWaitingAt(findId("Review tweet"));
+        assertThat(task()).hasCandidateGroup("management").isNotAssigned();
+
+        // Withdraw the tweet
+        runtimeService()
+                .createMessageCorrelation("tweetWithdrawn")
+                .processInstanceVariableEquals("content", content)
+                .correlateWithResult();
+
+        // Assert that process has ended
+        assertThat(processInstance).isEnded();
     }
 }
